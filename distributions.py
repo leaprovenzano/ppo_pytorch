@@ -11,7 +11,7 @@ class TruncatedNormal(Normal):
     arg_constraints = {'loc': constraints.real, 'scale': constraints.positive,
                        'low': constraints.dependent, 'high': constraints.dependent}
 
-    def __init__(self, loc, scale,  lower=-float('inf'), upper=float('inf'), *args, **kwargs):
+    def __init__(self, loc, scale,  lower=-float('inf'), upper=float('inf')):
         super(TruncatedNormal, self).__init__(loc, scale)
         self.low, self.high = torch.ones_like(loc) * lower, torch.ones_like(loc) * upper
 
