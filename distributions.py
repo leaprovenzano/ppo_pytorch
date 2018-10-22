@@ -15,8 +15,8 @@ class TruncatedNormal(Normal):
         super(TruncatedNormal, self).__init__(loc, scale)
         self.low, self.high = torch.ones_like(loc) * lower, torch.ones_like(loc) * upper
 
-        self._delta = (self.cdf(self.high) - self.cdf(self.cdf(self.low)))
-        self._delta[self.low>0] = -((self.cdf(-self.high) - self.cdf(self.cdf(-self.low))))[self.low>0]
+        self._delta = (self.cdf(self.high) - self.cdf(self.low))
+        self._delta[self.low>0] = -((self.cdf(-self.high) - self.cdf(-self.low)))[self.low>0]
 
 
     def sample(self, sample_shape=torch.Size()):
