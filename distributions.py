@@ -2,10 +2,10 @@ import math
 
 import torch
 from torch.distributions import constraints
-from torch.distributions import Normal, Categorical
+from torch.distributions import Normal
 
 
-class TruncatedNormal(Normal):
+class (Normal):
 
     
     arg_constraints = {'loc': constraints.real, 'scale': constraints.positive,
@@ -25,7 +25,7 @@ class TruncatedNormal(Normal):
             u = torch.rand_like(self.loc)
         return  self.icdf(self.cdf(self.low) +  u * self._delta)
 
-    def log_prob_trunc(self, value, eps=1e-5):
-        log_prob = self.log_prob(value) -  torch.log(self._delta)
+    def log_prob(self, value, eps=1e-5):
+        log_prob = super(TruncatedNormal, self).log_prob(value) -  torch.log(self._delta)
         log_prob[(value < self.low) | (value > self.high)] = math.log(0 + eps)
         return log_prob
