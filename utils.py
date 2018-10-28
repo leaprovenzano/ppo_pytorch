@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 
 
 class RewardProcessor(object):
@@ -37,12 +38,12 @@ class TrainHistory(object):
         len(self.policy_loss)
 
     def collect_entry_stats(self, losses):
-        stats = {'epochs': len(losses)}
-        stats['min'] = np.min(losses)
-        stats['max'] = np.max(losses)
-        stats['mean'] = np.mean(losses)
-        stats['std'] = np.std(losses)
-        stats['last'] = losses[-1]
+        stats = {'epochs': len(losses) if losses else 0}
+        stats['min'] = np.min(losses) if losses else 0
+        stats['max'] = np.max(losses) if losses else 0
+        stats['mean'] = np.mean(losses) if losses else 0
+        stats['std'] = np.std(losses) if losses else 0
+        stats['last'] = losses[-1] if losses else 0
         return stats
 
     def update(self, attr, losses):
@@ -50,10 +51,10 @@ class TrainHistory(object):
         attr.append(entry)
 
     def update_policy_losses(self, losses):
-        self.update(self.policy_losses, losses)
+        self.update(self.policy_loss, losses)
 
     def update_value_losses(self, losses):
-        self.update(self.value_losses, losses)
+        self.update(self.value_loss, losses)
 
     @property
     def last(self):

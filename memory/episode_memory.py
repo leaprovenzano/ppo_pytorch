@@ -1,5 +1,6 @@
 import torch
 
+
 class EpisodeMemory(object):
 
     def __init__(self):
@@ -20,15 +21,15 @@ class EpisodeMemory(object):
         self.is_open = True
 
     def update(self, state, action, reward):
-        self.states.append(torch.FloatTensor(state).view(1,-1))
+        self.states.append(torch.FloatTensor(state).view(1, -1))
         self.actions.append(action)
         self.rewards.append(torch.FloatTensor([reward]))
         self.total_reward += reward
 
     def finalize(self):
-        self.states = torch.cat(self.states)
-        self.actions = torch.cat(self.actions)
-        self.rewards = torch.cat(self.rewards)
+        # self.states = torch.cat(self.states)
+        # self.actions = torch.cat(self.actions)
+        # self.rewards = torch.cat(self.rewards)
         self.is_open = False
 
 
@@ -38,6 +39,7 @@ class PPOEpisodeMemory(EpisodeMemory):
         super(PPOEpisodeMemory, self).__init__()
         self.reward_processor = reward_processor
         self.logprobs = []
+
 
     def reset(self):
         super(PPOEpisodeMemory, self).reset()
@@ -51,11 +53,15 @@ class PPOEpisodeMemory(EpisodeMemory):
     def finalize(self):
         super(PPOEpisodeMemory, self).finalize()
         self.logprobs = torch.cat(self.logprobs)
-        self.set_returns()
+        # self.set_returns()
 
-    def set_returns(self):
-        processed_rewards = self.reward_processor.shape(self.rewards)
-        self.returns = self.reward_processor.compute_discount_returns(processed_rewards)
+    def get_returns(self, rewards):
+        processed_rewards = self.reward_processor.shape(rewards)
+        return self.reward_processor.compute_discount_returns(processed_rewards)
 
-        
+    def get_values(self):
 
+        return self.states, self.actions, self.get_returns(torch.cat(self.rewards)), self.logprobs
+        # self.actions = torch.cat(self.actions)
+        # self.returns = torch.cat(self.rewards)
+        # self.is_open = False
