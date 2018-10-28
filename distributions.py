@@ -5,7 +5,7 @@ from torch.distributions import constraints
 from torch.distributions import Normal
 
 
-class (Normal):
+class TruncatedNormal(Normal):
 
     
     arg_constraints = {'loc': constraints.real, 'scale': constraints.positive,
