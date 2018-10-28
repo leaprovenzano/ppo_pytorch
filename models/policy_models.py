@@ -2,43 +2,31 @@ from torch import nn
 from torch.distributions import Normal
 
 from ppo_pytorch.distributions import TruncatedNormal
+from ppo_pytorch.models.base import SimpleMLP
 
 
 
 
+class GaussianPolicy(SimpleMLP):
 
-class GaussianPolicy(nn.Module):
-
-    def __init__(self, input_dim, hidden_size, output_dim, fixed_std=.5, hidden_act=nn.Tanh, output_act=nn.Tanh):
-        super().__init__()
+    def __init__(self, input_dim, hidden_dims, output_dim, hidden_act=nn.Tanh, output_act=nn.Tanh, fixed_std=.5):
+        super(GaussianPolicy, self).__init__( input_dim, hidden_dims,output_dim, hidden_act=nn.Tanh, output_act=nn.Tanh)
         self.std = fixed_std
-        self.w1 = nn.Linear(input_dim, hidden_size)
-        self.w2 = nn.Linear(hidden_size, hidden_size)
-        self.mean_head = nn.Linear(hidden_size, output_dim)
-        self.hidden_act = hidden_act
-        self.output_act = output_act
 
 
     def dist(self, x):
         return Normal(x, self.std)
 
 
-    def forward(self, x):
-        x = self.hidden_act()(self.w1(x))
-        x = self.hidden_act()(self.w2(x))
-        mean = self.output_act()(self.mean_head(x))
-        return mean
-
     def sample_action(self, states):
         mean = self.forward(states)
-        dist = self.dist(mean, self.std)
+        dist = self.dist(mean)
         action = dist.sample()
-        logprob = dist.log_prob(action)
-        return action, logprob
+        return action, dist.log_prob(action)
 
     def evaluate_action(self, states, actions):
         mean = self.forward(states)
-        dist = self.dist(mean, self.std)
+        dist = self.dist(mean)
         logprob = dist.log_prob(actions)
         return logprob
 
