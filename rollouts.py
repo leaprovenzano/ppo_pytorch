@@ -204,5 +204,3 @@ class MultiEnvManager(object):
             rewards = torch.cat(rewards)
             logprobs = torch.cat(logprobs)
             return states, actions, rewards, logprobs
-
-
