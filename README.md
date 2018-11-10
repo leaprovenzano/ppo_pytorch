@@ -5,6 +5,7 @@ A simple implementation actor critic style [Clipped Proximal Policy Optimization
 
 
 ![gif](gifs/hardcore_runner2.gif "gif")
+
 *This guy has been training for 50409 16 episode rollouts in the episode shown he scored 284.6*
 
 
