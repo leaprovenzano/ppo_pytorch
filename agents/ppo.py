@@ -11,7 +11,7 @@ from torch.autograd import Variable
 class PPOAgent(Agent):
 
     @classmethod
-    def from_saved(cls, path, env, memory, policy_model, value_model,  policy_optimizer, value_optimizer):
+    def from_saved(cls, path, env, memory, policy_model, value_model, policy_optimizer, value_optimizer):
         cp = torch.load(path)
         agent = cls(env, memory, policy_model, value_model,
                     policy_optimizer, value_optimizer)
@@ -22,10 +22,7 @@ class PPOAgent(Agent):
             getattr(agent, k).load_state_dict(v)
         return agent
 
-
-
-
-    def __init__(self, env, memory, policy_model, value_model,  policy_optimizer, value_optimizer, policy_epochs=20, value_epochs=20,
+    def __init__(self, env, memory, policy_model, value_model, policy_optimizer, value_optimizer, policy_epochs=20, value_epochs=20,
                  policy_grad_norm=0.5, value_grad_norm=0.5, normalize_advantage=True, clip_epsilon=.2):
 
         super(PPOAgent, self).__init__(env, memory)
@@ -42,7 +39,6 @@ class PPOAgent(Agent):
         self.clip_epsilon = clip_epsilon
         self.history = TrainHistory()
 
-
     def step(self, state, render=True):
         action, logprob = self.get_action(state)
         next_state, reward, done, _ = self.env.step(np.asarray(action[0]))
@@ -50,7 +46,6 @@ class PPOAgent(Agent):
             self.env.render()
         self.memory.update(state, action, reward, logprob)
         return next_state, done
-
 
     def get_action(self, state):
         with torch.no_grad():
@@ -105,7 +100,6 @@ class PPOAgent(Agent):
         # self.value_model.eval()
         self.history.update_value_losses(losses)
 
-
     def update(self):
         states, actions, returns, logprobs = self.memory.get_values()
         # states , actions, returns memory.get_values()
@@ -118,7 +112,7 @@ class PPOAgent(Agent):
         return str(self.history)
 
     def save(self, path):
-        out = {'attrs':self.params}
+        out = {'attrs': self.params}
         state_dicts = {}
 
         state_dicts['policy_model'] = self.policy_model.state_dict()
@@ -130,12 +124,10 @@ class PPOAgent(Agent):
         torch.save(out, path)
 
 
-
 class MultiPPOAgent(object):
 
-
     @classmethod
-    def from_saved(cls, path, env_manager, memory, policy_model, value_model,  policy_optimizer, value_optimizer):
+    def from_saved(cls, path, env_manager, memory, policy_model, value_model, policy_optimizer, value_optimizer):
         cp = torch.load(path)
         agent = cls(env_manager, policy_model, value_model,
                     policy_optimizer, value_optimizer)
@@ -146,8 +138,7 @@ class MultiPPOAgent(object):
             getattr(agent, k).load_state_dict(v)
         return agent
 
-
-    def __init__(self, env_manager, policy_model, value_model,  policy_optimizer, value_optimizer, policy_epochs=20, value_epochs=20,
+    def __init__(self, env_manager, policy_model, value_model, policy_optimizer, value_optimizer, policy_epochs=20, value_epochs=20,
                  policy_grad_norm=0.5, value_grad_norm=0.5, normalize_advantage=True, clip_epsilon=.2):
 
         self.envs = env_manager
@@ -161,21 +152,20 @@ class MultiPPOAgent(object):
         self.value_grad_norm = value_grad_norm
         self.normalize_advantage = normalize_advantage
         self.clip_epsilon = clip_epsilon
-        self.episode_rewards =[]
-        self.episode=0
+        self.episode_rewards = []
+        self.episode = 0
         self.history = TrainHistory()
-        
+
     @property
     def params(self):
         return {k: v for k, v in self.__dict__.items() if not hasattr(v, '__dict__')}
 
-        
     def episode_logstr(self, train_stats):
         eps_logstr = 'episode {}, reward avg {:.2f} |  policy std : {:.4f}'
         return eps_logstr.format(self.episode, self.episode_rewards[-1],
                                  train_stats,
                                  np.exp(self.policy_model.std.detach().numpy()[0]))
-        
+
     def run_episode(self, render=False):
         self.envs.reset()
         while not self.envs.ready:
@@ -187,12 +177,10 @@ class MultiPPOAgent(object):
         update_stats = self.train()
         print(self.episode_logstr(update_stats))
         self.episode += 1
-        
 
     def train(self):
         _, nsamples = self.update()
         return 'nsamples : {}'.format(nsamples)
-
 
     def estimate_advantage(self, returns, states):
         advantages = Variable(returns).view(-1, 1) - Variable(self.value_model.predict(states).data).view(-1, 1)
@@ -240,7 +228,6 @@ class MultiPPOAgent(object):
             losses.append(self.value_step(states, returns))
         self.history.update_value_losses(losses)
 
-
     def update(self):
         states, actions, returns, logprobs = self.envs.get_train_data()
 
@@ -248,13 +235,13 @@ class MultiPPOAgent(object):
         actions = Variable(actions)
         returns = Variable(returns)
         logprobs = Variable(logprobs.data)
-        
+
         self.update_policy(states, actions, returns, logprobs)
         self.update_value_model(states, returns)
         return str(self.history), len(states)
 
     def save(self, path):
-        out = {'attrs':self.params}
+        out = {'attrs': self.params}
         state_dicts = {}
 
         state_dicts['policy_model'] = self.policy_model.state_dict()
@@ -264,11 +251,11 @@ class MultiPPOAgent(object):
 
         out['state_dicts'] = state_dicts
         torch.save(out, path)
-        
-    def run_test_episode(self, env,  render=True):
+
+    def run_test_episode(self, env, render=True):
         reward = 0
         state = env.reset()
-        done=False
+        done = False
         while not done:
 
             with torch.no_grad():
