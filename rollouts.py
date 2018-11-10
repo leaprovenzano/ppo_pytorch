@@ -190,13 +190,13 @@ class MultiEnvManager(object):
         if self.ready:
             states = []
             actions = []
-            returns = []
+            rewards = []
             logprobs = []
 
             for env in self.envs:
                 states.append(env.states)
                 actions.append(env.actions)
-                returns.append(env.returns)
+                rewards.append(env.rewards)
                 logprobs.append(env.logprobs)
 
             states = torch.cat(states)
@@ -204,3 +204,5 @@ class MultiEnvManager(object):
             rewards = torch.cat(rewards)
             logprobs = torch.cat(logprobs)
             return states, actions, rewards, logprobs
+
+
