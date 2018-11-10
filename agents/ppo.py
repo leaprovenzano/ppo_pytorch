@@ -180,8 +180,8 @@ class MultiPPOAgent(object):
         self.envs.reset()
         while not self.envs.ready:
             with torch.no_grad():
-                actions, logprobs = self.policy_model.sample_action(envs.current_states)
-            envs.step(actions, logprobs)
+                actions, logprobs = self.policy_model.sample_action(self.envs.current_states)
+            self.envs.step(actions, logprobs)
 
         self.episode_rewards.append(self.envs.mean_reward)
         update_stats = self.train()
@@ -192,7 +192,6 @@ class MultiPPOAgent(object):
     def train(self):
         _, nsamples = self.update()
         return 'nsamples : {}'.format(nsamples)
-
 
 
     def estimate_advantage(self, returns, states):
