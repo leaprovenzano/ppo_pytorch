@@ -10,7 +10,7 @@ from ppo_pytorch.models.base import SimpleMLP
 class GaussianPolicy(SimpleMLP):
 
     def __init__(self, input_dim, hidden_dims, output_dim, hidden_act=nn.Tanh, output_act=nn.Tanh, fixed_std=.5):
-        super(GaussianPolicy, self).__init__( input_dim, hidden_dims,output_dim, hidden_act=nn.Tanh, output_act=nn.Tanh)
+        super(GaussianPolicy, self).__init__( input_dim, hidden_dims, output_dim, hidden_act=hidden_act, output_act=output_act)
         self.std = fixed_std
 
 
