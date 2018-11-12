@@ -68,12 +68,10 @@ class FixedGaussianPolicy(PolicyLayer):
         return Normal(x, self.std)
 
 
-
 class CategoricalPolicy(PolicyLayer):
 
-    def __init__(self, input_dim, output_dims,  activation=nn.Softmax):
-        super(CategoricalPolicy, self).__init__(input_dim, output_dims,  output_activation=activation)
-        
-        
+    def __init__(self, input_dim, output_dims, activation=nn.Softmax):
+        super(CategoricalPolicy, self).__init__(input_dim, output_dims, output_activation=activation)
+
     def dist(self, x):
         return Categorical(x)
