@@ -5,6 +5,8 @@ from torch.distributions import Normal, Categorical
 
 import numpy as np
 
+from ppo_pytorch.distributions import TruncatedNormal
+
 
 class PolicyLayer(nn.Module):
 
@@ -50,11 +52,15 @@ class GaussianPolicy(PolicyLayer):
 
     def __init__(self, input_dim, output_dim, activation=nn.Tanh, init_std=.5):
         super(GaussianPolicy, self).__init__(input_dim, output_dim, activation=activation)
-        self.std = nn.Parameter(torch.ones(1) * np.log(self.std))
+        self.log_std = nn.Parameter(torch.ones(1) * np.log(init_std))
+
+    @property
+    def std(self):
+        return torch.exp(self.log_std)
 
     def dist(self, x):
         x = self(x)
-        return Normal(x, torch.exp(self.std.expand_as(x)))
+        return Normal(x, self.std.expand_as(x))
 
 
 class FixedGaussianPolicy(PolicyLayer):
@@ -66,6 +72,26 @@ class FixedGaussianPolicy(PolicyLayer):
     def dist(self, x):
         x = self(x)
         return Normal(x, self.std)
+
+
+class FixedTruncatedGaussianPolicy(FixedGaussianPolicy):
+
+    def __init__(self, action_bounds=(-1., 1.), *args, **kwargs):
+        super(FixedTruncatedGaussianPolicy, self).__init__(*args, **kwargs)
+        self.action_bounds = action_bounds
+
+    def dist(self, x):
+        return TruncatedNormal(x, self.std, *self.action_bounds)
+
+
+class TruncatedGaussianPolicy(GaussianPolicy):
+
+    def __init__(self, action_bounds=(-1., 1.), *args, **kwargs):
+        super(TruncatedGaussianPolicy, self).__init__(*args, **kwargs)
+        self.action_bounds = action_bounds
+
+    def dist(self, x):
+        return TruncatedNormal(x, self.std.expand_as(x), *self.action_bounds)
 
 
 class CategoricalPolicy(PolicyLayer):
