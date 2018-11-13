@@ -13,7 +13,7 @@ URL = 'https://github.com/leaprovenzano/ppo-pytorch'
 EMAIL = 'leaprovenzano@gmail.com'
 AUTHOR = 'Lea Provenzano'
 REQUIRES_PYTHON = '>=3.6.0'
-VERSION = ppo_pytorch.___version__
+VERSION = ppo_pytorch.__version__
 
 REQUIRED = ['torch', 'numpy', 'gym']
 
