@@ -1,7 +1,7 @@
 
 # ppo_pytorch :
 
-A simple implementation actor critic style [Clipped Proximal Policy Optimization](https://arxiv.org/abs/1707.06347) in pytorch that runs in [gym](https://gym.openai.com/) envs. This library also contains some weird additions, shortcuts and experimental stuff like  truncated distributions, fixed std on the policy network (suprisingly works quite well) and full episode rollouts so it may not always marry up precisely with openai baselines. 
+A simple implementation of [Clipped Proximal Policy Optimization](https://arxiv.org/abs/1707.06347) in pytorch that runs in [gym](https://gym.openai.com/) envs. This library also contains some weird additions, shortcuts and experimental stuff like  truncated distributions, fixed std on the policy network (suprisingly works quite well) and full episode rollouts so it may not always marry up precisely with openai baselines. 
 
 
 ![gif](gifs/hardcore_runner2.gif "gif")
