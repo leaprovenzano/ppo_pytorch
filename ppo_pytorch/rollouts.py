@@ -19,8 +19,6 @@ class EnvWorker(object):
 
     Attributes:
 
-        name (str): env name, this will be used to make our gym enviornment
-
         closed (bool): if true memory objects are closed and have been turned
             into torch tensors and rewards will have been processed. This worker
             is ready for training and will not take further steps until reset.
@@ -36,19 +34,22 @@ class EnvWorker(object):
         env (gym enviornment): actual gym enviorment will be created at init given
             name using gym.make.
 
-        episode_reward (int|float):  running reward for the current episode
+        episode_reward (int|float): running reward for the current episode
             on episode completion (and call to finalize) this value will be stored
             in self.total_reward_log. On call to reset it is zeroed
 
+        name (str): env name, this will be used to make our gym enviornment
+
         reward_processor (ppo_pytorch.utils.RewardProcessor): RewardProcessor object 
             used to process rewards on episode completion.
+
 
         total_reward_log (list): list of unprocessed final rewards for all the workers
             episodes. updated with each new episode from the episode_reward attribute on
             finalize
 
-    Memory Attributes:
 
+    Memory Attributes:
         actions (list | torch.tensor): actions taken during current
             episode. deleted on reset
 
@@ -62,7 +63,7 @@ class EnvWorker(object):
 
         states (list | torch.tensor): states recorded during training updated, deleted on reset.
 
-
+        values (list | torch.tensor): predicted values for each step.
 
     """
 
@@ -87,16 +88,17 @@ class EnvWorker(object):
         self.states = []
         self.actions = []
         self.rewards = []
-        self.returns = []
         self.logprobs = []
+        self.values = []
 
     def get_current_state(self):
         return self.current_state
 
-    def step(self, action, logprob):
+    def step(self, action, logprob, value):
         if not self.done:
             self.actions.append(action)
             self.logprobs.append(logprob)
+            self.values.append(value)
             self.states.append(self.current_state)
             next_state, r, self.done, _ = self.env.step(np.asarray(action))
             self.current_state = torch.FloatTensor(next_state)
@@ -112,6 +114,7 @@ class EnvWorker(object):
             self.states = torch.stack(self.states)
             self.actions = torch.stack(self.actions)
             self.logprobs = torch.stack(self.logprobs)
+            self.values = torch.stack(self.values)
             self.total_reward_log.append(self.episode_reward)
             self.closed = True
 
@@ -121,7 +124,7 @@ class EnvWorker(object):
             processed_rewards)
 
 
-class MultiEnvManager(object):
+class EnvManager(object):
 
     """Rollout manager for multiple envworkers
 
@@ -181,9 +184,9 @@ class MultiEnvManager(object):
     def mean_reward(self):
         return np.mean([env.episode_reward for env in self.envs])
 
-    def step(self, actions, logprobs):
+    def step(self, actions, logprobs, values):
         for i, env in enumerate(self.get_open()):
-            env.step(actions[i], logprobs[i])
+            env.step(actions[i], logprobs[i], values[i])
 
     def get_train_data(self):
 
@@ -192,15 +195,18 @@ class MultiEnvManager(object):
             actions = []
             rewards = []
             logprobs = []
+            values = []
 
             for env in self.envs:
                 states.append(env.states)
                 actions.append(env.actions)
                 rewards.append(env.rewards)
                 logprobs.append(env.logprobs)
+                values.append(env.values)
 
             states = torch.cat(states)
             actions = torch.cat(actions)
             rewards = torch.cat(rewards)
             logprobs = torch.cat(logprobs)
-            return states, actions, rewards, logprobs
+            values = torch.cat(values)
+            return states, actions, rewards, logprobs, values
