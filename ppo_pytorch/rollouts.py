@@ -7,7 +7,7 @@ class EnvWorker(object):
 
     """Episode based, acts as an interface with enviornment and
     tracks episode state, actions, etc for training on completion.
-
+    
     episode memory objects (states, actions, rewards, logprobs) will
     be kept for episode duration and updated as lists. On episode completion
     they will be turned into torch tensors for training and the rewards
@@ -15,55 +15,56 @@ class EnvWorker(object):
     handled by the finalize method ). After training is complete we can 
     call the reset method to clean out memory  and start a new episode in 
     the env.
-
-
+    
+    
     Attributes:
-
-        name (str): env name, this will be used to make our gym enviornment
 
         closed (bool): if true memory objects are closed and have been turned
             into torch tensors and rewards will have been processed. This worker
             is ready for training and will not take further steps until reset.
-
+    
         current_state (torch.FloatTensor): tensor of the current state
-
+    
         current_step (int): the current step in the enviorment if the worker is
             done this should also reflect the length of the memory objects
-
+    
         done (bool): If true the episode has been completed in the enviorment no
             further enviornment steps will be taken until we call reset.
-
+    
         env (gym enviornment): actual gym enviorment will be created at init given
             name using gym.make.
-
-        episode_reward (int|float):  running reward for the current episode
+    
+        episode_reward (int|float): running reward for the current episode
             on episode completion (and call to finalize) this value will be stored
             in self.total_reward_log. On call to reset it is zeroed
-
+    
+        name (str): env name, this will be used to make our gym enviornment
+    
         reward_processor (ppo_pytorch.utils.RewardProcessor): RewardProcessor object 
             used to process rewards on episode completion.
+    
 
         total_reward_log (list): list of unprocessed final rewards for all the workers
             episodes. updated with each new episode from the episode_reward attribute on
             finalize
-
+        
+    
     Memory Attributes:
-
         actions (list | torch.tensor): actions taken during current
             episode. deleted on reset
-
+    
         logprobs (list | torch.tensor): logprobs recorded during rollout from policy model 
             for actions taken in the current episode, deleted on reset.
-
+    
         rewards (list   torch.tensor): during training this will be a list of tensors
             with unmodified rewards for each step directly from the enviornment. 
             After episode completion (and call to finalize) this attribute will be modified by 
             the reward processor to contain our processed reward tensor.
-
+    
         states (list | torch.tensor): states recorded during training updated, deleted on reset.
-
-
-
+    
+        values (list | torch.tensor): predicted values for each step.
+    
     """
 
     def __init__(self, name, reward_processor):
@@ -87,16 +88,17 @@ class EnvWorker(object):
         self.states = []
         self.actions = []
         self.rewards = []
-        self.returns = []
         self.logprobs = []
+        self.values = []
 
     def get_current_state(self):
         return self.current_state
 
-    def step(self, action, logprob):
+    def step(self, action, logprob, value):
         if not self.done:
             self.actions.append(action)
             self.logprobs.append(logprob)
+            self.values.append(value)
             self.states.append(self.current_state)
             next_state, r, self.done, _ = self.env.step(np.asarray(action))
             self.current_state = torch.FloatTensor(next_state)
@@ -112,6 +114,7 @@ class EnvWorker(object):
             self.states = torch.stack(self.states)
             self.actions = torch.stack(self.actions)
             self.logprobs = torch.stack(self.logprobs)
+            self.values = torch.stack(self.values)
             self.total_reward_log.append(self.episode_reward)
             self.closed = True
 
