@@ -124,7 +124,7 @@ class EnvWorker(object):
             processed_rewards)
 
 
-class MultiEnvManager(object):
+class EnvManager(object):
 
     """Rollout manager for multiple envworkers
 
