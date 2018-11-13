@@ -4,7 +4,6 @@ import sys
 from shutil import rmtree
 
 from setuptools import find_packages, setup, Command
-import ppo_pytorch
 
 # Package meta-data.
 NAME = 'ppo_pytorch'
@@ -13,7 +12,7 @@ URL = 'https://github.com/leaprovenzano/ppo-pytorch'
 EMAIL = 'leaprovenzano@gmail.com'
 AUTHOR = 'Lea Provenzano'
 REQUIRES_PYTHON = '>=3.6.0'
-VERSION = ppo_pytorch.__version__
+VERSION = '0.1.0'
 
 REQUIRED = ['torch', 'numpy', 'gym']
 
