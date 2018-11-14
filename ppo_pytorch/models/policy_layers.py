@@ -81,6 +81,7 @@ class FixedTruncatedGaussianPolicy(FixedGaussianPolicy):
         self.action_bounds = action_bounds
 
     def dist(self, x):
+        x = self(x)
         return TruncatedNormal(x, self.std, *self.action_bounds)
 
 
@@ -91,13 +92,16 @@ class TruncatedGaussianPolicy(GaussianPolicy):
         self.action_bounds = action_bounds
 
     def dist(self, x):
+        x = self(x)
         return TruncatedNormal(x, self.std.expand_as(x), *self.action_bounds)
 
 
 class CategoricalPolicy(PolicyLayer):
 
     def __init__(self, input_dim, output_dims, activation=nn.Softmax):
-        super(CategoricalPolicy, self).__init__(input_dim, output_dims, output_activation=activation)
+        super(CategoricalPolicy, self).__init__(input_dim, output_dims, activation=activation)
+        self.activation = activation(dim=-1)
 
     def dist(self, x):
-        return Categorical(x)
+        x = self(x)
+        return Categorical(probs=x)
