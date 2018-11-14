@@ -27,7 +27,7 @@ class PolicyValueModel(nn.Module):
     def forward(self, x):
         x = self.hidden(x)
         p = self.policy(x)
-        v = self.value(x)
+        v = self.value_model(x)
         return p, v
 
     def sample_action(self, x):
