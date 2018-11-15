@@ -137,7 +137,7 @@ class EnvManager(object):
         self.reward_processor = reward_processor
 
     def build_workers(self, envs):
-        return [self.EnvWorker(env, self.reward_processor) for env in envs]
+        return [EnvWorker(env, self.reward_processor) for env in envs]
 
     def __len__(self):
         return self.n
@@ -209,6 +209,8 @@ class EnvManager(object):
             logprobs = torch.cat(logprobs)
             values = torch.cat(values)
             return states, actions, rewards, logprobs, values
+
+
 
 
 class GymManager(EnvManager):
