@@ -72,6 +72,9 @@ class EnvWorker(object):
     def __len__(self):
         return self.current_step
 
+    def close(self):
+        return self.env.close()
+
     def reset(self, *args):
         self.current_state = torch.FloatTensor(self.env.reset())
         self.current_step = 0
@@ -122,21 +125,19 @@ class EnvManager(object):
     """Rollout manager for multiple envworkers
 
     Attributes:
-        env_wrapper (EnvWrapper): gym or custom env wrapper for gym env
         envs (list (EnvWorker)): list of n envworkers
         n (int): number of envworkers to maintain
-        name (str): env name, this will be used to instantiate our gym enviornments
         reward_processor (ppo_pytorch.utils.RewardProcessor): RewardProcessor object 
             passed to envworkers and used to process rewards on episode completion
     """
 
-    def __init__(self, name, n, reward_processor, env_wrapper=None):
-        self.name = name
-        self.n = n
+    def __init__(self, envs, reward_processor):
+        self.envs = self.build_workers(envs)
+        self.n = len(envs)
         self.reward_processor = reward_processor
-        self.env_wrapper = env_wrapper
 
-        self.envs = self.build_envs()
+    def build_workers(self, envs):
+        return [self.EnvWorker(env, self.reward_processor) for env in envs]
 
     def __len__(self):
         return self.n
@@ -146,15 +147,6 @@ class EnvManager(object):
 
     def __getitem__(self, i):
         return self.envs[i]
-
-    def build_env(self):
-        env = gym.make(self.name)
-        if self.env_wrapper is not None:
-            return self.env_wrapper(env)
-        return env
-
-    def build_envs(self):
-        return [self.build_env() for i in range(self.n)]
 
     def close_envs(self):
         for env in self.envs:
@@ -217,3 +209,35 @@ class EnvManager(object):
             logprobs = torch.cat(logprobs)
             values = torch.cat(values)
             return states, actions, rewards, logprobs, values
+
+
+class GymManager(EnvManager):
+
+    """docstring for GymManager
+
+        Attributes:
+        env_wrapper (EnvWrapper): gym or custom env wrapper for gym env
+        envs (list (EnvWorker)): list of n envworkers
+        n (int): number of envworkers to maintain
+        name (str): env name, this will be used to instantiate our gym enviornments
+        reward_processor (ppo_pytorch.utils.RewardProcessor): RewardProcessor object 
+            passed to envworkers and used to process rewards on episode completion
+    """
+
+    def __init__(self, name, n, reward_processor, env_wrapper=None):
+        self.name = name
+        self.env_wrapper = env_wrapper
+        super(GymManager, self).__init__(envs=self.build_envs(n), reward_processor=reward_processor)
+
+    def build_env(self):
+        env = gym.make(self.name)
+        if self.env_wrapper is not None:
+            return self.env_wrapper(env)
+        return env
+
+    def build_envs(self, n):
+        return [self.build_env() for i in range(n)]
+
+
+
+
