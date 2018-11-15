@@ -18,6 +18,8 @@ class EnvWorker(object):
 
 
     Attributes:
+        actions (list | torch.tensor): actions taken during current
+            episode. deleted on reset
 
         closed (bool): if true memory objects are closed and have been turned
             into torch tensors and rewards will have been processed. This worker
@@ -38,23 +40,12 @@ class EnvWorker(object):
             on episode completion (and call to finalize) this value will be stored
             in self.total_reward_log. On call to reset it is zeroed
 
-        name (str): env name, this will be used to make our gym enviornment
+        logprobs (list | torch.tensor): logprobs recorded during rollout from policy model 
+            for actions taken in the current episode, deleted on reset.
 
         reward_processor (ppo_pytorch.utils.RewardProcessor): RewardProcessor object 
             used to process rewards on episode completion.
 
-
-        total_reward_log (list): list of unprocessed final rewards for all the workers
-            episodes. updated with each new episode from the episode_reward attribute on
-            finalize
-
-
-    Memory Attributes:
-        actions (list | torch.tensor): actions taken during current
-            episode. deleted on reset
-
-        logprobs (list | torch.tensor): logprobs recorded during rollout from policy model 
-            for actions taken in the current episode, deleted on reset.
 
         rewards (list   torch.tensor): during training this will be a list of tensors
             with unmodified rewards for each step directly from the enviornment. 
@@ -63,17 +54,19 @@ class EnvWorker(object):
 
         states (list | torch.tensor): states recorded during training updated, deleted on reset.
 
+        total_reward_log (list): list of unprocessed final rewards for all the workers
+            episodes. updated with each new episode from the episode_reward attribute on
+            finalize
+
         values (list | torch.tensor): predicted values for each step.
 
     """
 
-    def __init__(self, name, reward_processor):
+    def __init__(self, env, reward_processor):
         self.reward_processor = reward_processor
         self.total_reward_log = []
 
-        self.name = name
-        self.env = gym.make(name)
-
+        self.env = env
         self.reset()
 
     def __len__(self):
@@ -129,6 +122,7 @@ class EnvManager(object):
     """Rollout manager for multiple envworkers
 
     Attributes:
+        env_wrapper (EnvWrapper): gym or custom env wrapper for gym env
         envs (list (EnvWorker)): list of n envworkers
         n (int): number of envworkers to maintain
         name (str): env name, this will be used to instantiate our gym enviornments
@@ -136,13 +130,13 @@ class EnvManager(object):
             passed to envworkers and used to process rewards on episode completion
     """
 
-    def __init__(self, name, n, reward_processor):
+    def __init__(self, name, n, reward_processor, env_wrapper=None):
         self.name = name
         self.n = n
         self.reward_processor = reward_processor
+        self.env_wrapper = env_wrapper
 
-        self.envs = [EnvWorker(self.name, self.reward_processor)
-                     for i in range(self.n)]
+        self.envs = self.build_envs()
 
     def __len__(self):
         return self.n
@@ -152,6 +146,19 @@ class EnvManager(object):
 
     def __getitem__(self, i):
         return self.envs[i]
+
+    def build_env(self):
+        env = gym.make(self.name)
+        if self.env_wrapper is not None:
+            return self.env_wrapper(env)
+        return env
+
+    def build_envs(self):
+        return [self.build_env() for i in range(self.n)]
+
+    def close_envs(self):
+        for env in self.envs:
+            return env.close()
 
     def reset(self):
         for env in self.envs:
