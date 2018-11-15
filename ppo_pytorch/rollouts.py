@@ -132,9 +132,10 @@ class EnvManager(object):
     """
 
     def __init__(self, envs, reward_processor):
-        self.envs = self.build_workers(envs)
         self.n = len(envs)
         self.reward_processor = reward_processor
+        self.envs = self.build_workers(envs)
+
 
     def build_workers(self, envs):
         return [EnvWorker(env, self.reward_processor) for env in envs]
