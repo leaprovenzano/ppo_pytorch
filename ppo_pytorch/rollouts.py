@@ -213,7 +213,7 @@ class EnvManager(object):
 
 class GymManager(EnvManager):
 
-    """docstring for GymManager
+    """Env manager for openai gym enviornments (stuff loadable by gym.make )
 
         Attributes:
         env_wrapper (EnvWrapper): gym or custom env wrapper for gym env
@@ -237,7 +237,3 @@ class GymManager(EnvManager):
 
     def build_envs(self, n):
         return [self.build_env() for i in range(n)]
-
-
-
-
