@@ -51,7 +51,7 @@ class PolicyLayer(nn.Module):
 
 class GaussianPolicy(PolicyLayer):
 
-    def __init__(self, input_dim, output_dim, activation=nn.Tanh, init_std=.5):
+    def __init__(self, input_dim, output_dim, activation=nn.Tanh, init_std=1.):
         super(GaussianPolicy, self).__init__(input_dim, output_dim, activation=activation)
         self.log_std = nn.Parameter(torch.ones(1) * np.log(init_std))
 
