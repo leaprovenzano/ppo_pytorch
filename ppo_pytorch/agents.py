@@ -20,8 +20,9 @@ class PPOAgent(object):
             getattr(agent, k).load_state_dict(v)
         return agent
 
-    def __init__(self, env_manager, model, optimizer, epochs=20, grad_norm=0.5, normalize_advantage=True, clip_epsilon=.2, value_loss_coef=.1):
+    def __init__(self, env_manager, model, optimizer, epochs=20, grad_norm=0.5, normalize_advantage=True, clip_epsilon=.2, value_loss_coef=.1, entropy_bonus_coef=0.01):
         self.value_loss_coef = value_loss_coef
+        self.entropy_bonus_coef = entropy_bonus_coef
         self.envs = env_manager
         self.model = model
         self.optimizer = optimizer
@@ -83,12 +84,12 @@ class PPOAgent(object):
         advantages = self.estimate_advantage(returns, pred_values)
 
         for i in range(self.epochs):
-            log_probs, values = self.model.evaluate_actions(states, actions)
+            log_probs, entropy, values = self.model.evaluate_actions(states, actions)
             policy_loss = self.policy_loss(log_probs, old_logprobs, advantages)
             value_loss = self.value_loss(returns, values)
 
             self.optimizer.zero_grad()
-            loss = (value_loss * self.value_loss_coef + policy_loss)
+            loss = (value_loss * self.value_loss_coef + policy_loss - entropy * self.entropy_bonus_coef)
             loss.backward()
             nn.utils.clip_grad_norm_(self.model.parameters(),
                                      self.grad_norm)

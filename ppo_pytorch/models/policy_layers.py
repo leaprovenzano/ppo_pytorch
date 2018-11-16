@@ -45,7 +45,8 @@ class PolicyLayer(nn.Module):
     def evaluate_action(self, x, actions):
         dist = self.dist(x)
         logprob = dist.log_prob(actions)
-        return logprob
+        entropy = dist.entropy().mean()
+        return logprob, entropy
 
 
 class GaussianPolicy(PolicyLayer):

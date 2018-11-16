@@ -38,6 +38,6 @@ class PolicyValueModel(nn.Module):
 
     def evaluate_actions(self, x, action):
         x = self.hidden(x)
-        logprob = self.policy.evaluate_action(x, action)
+        logprob, entropy = self.policy.evaluate_action(x, action)
         value = self.value_model(x)
-        return logprob, value
+        return logprob, entropy, value
