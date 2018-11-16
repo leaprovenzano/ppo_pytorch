@@ -37,10 +37,10 @@ class PPOAgent(object):
     def params(self):
         return {k: v for k, v in self.__dict__.items() if not hasattr(v, '__dict__')}
 
-    def episode_logstr(self, n, loss, policy_loss, value_loss):
-        eps_logstr = 'episode {}, reward avg {:.2f} | samples: {} --  loss: {:.4f} | policy loss: {:.4f} |value loss: {:.4f}'
+    def episode_logstr(self, n, loss, policy_loss, value_loss, entropy):
+        eps_logstr = 'episode {}, reward avg {:.2f} | samples: {} --  loss: {:.4f} | policy loss: {:.4f} |value loss: {:.4f} | entropy: {:.4f}'
         return eps_logstr.format(self.episode, self.episode_rewards[-1],
-                                 n, loss, policy_loss, value_loss)
+                                 n, loss, policy_loss, value_loss, entropy)
 
     def run_episode(self, render=False):
         self.envs.reset()
@@ -50,8 +50,8 @@ class PPOAgent(object):
             self.envs.step(actions, logprobs, values)
 
         self.episode_rewards.append(self.envs.mean_reward)
-        n, loss, policy_loss, value_loss = self.update()
-        print(self.episode_logstr(n, loss, policy_loss, value_loss))
+        n, loss, policy_loss, value_loss, entropy = self.update()
+        print(self.episode_logstr(n, loss, policy_loss, value_loss, entropy))
         self.episode += 1
 
     def estimate_advantage(self, returns, values):
@@ -80,6 +80,7 @@ class PPOAgent(object):
         policy_losses = []
         value_losses = []
         losses = []
+        entropies = []
 
         advantages = self.estimate_advantage(returns, pred_values)
 
@@ -97,7 +98,8 @@ class PPOAgent(object):
             policy_losses.append(policy_loss.item())
             value_losses.append(value_loss.item())
             losses.append(loss.item())
-        return len(states), np.mean(losses), np.mean(policy_losses), np.mean(value_losses)
+            entropies.append(entropy.item())
+        return len(states), np.mean(losses), np.mean(policy_losses), np.mean(value_losses), np.mean(entropies)
 
     def save(self, path):
         out = {'attrs': self.params}
