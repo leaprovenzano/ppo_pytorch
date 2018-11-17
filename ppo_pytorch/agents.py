@@ -20,8 +20,9 @@ class PPOAgent(object):
             getattr(agent, k).load_state_dict(v)
         return agent
 
-    def __init__(self, env_manager, model, optimizer, epochs=20, grad_norm=0.5, normalize_advantage=True, clip_epsilon=.2, value_loss_coef=.1):
+    def __init__(self, env_manager, model, optimizer, epochs=20, grad_norm=0.5, normalize_advantage=True, clip_epsilon=.5, value_loss_coef=.1, entropy_bonus_coef=0.1):
         self.value_loss_coef = value_loss_coef
+        self.entropy_bonus_coef = entropy_bonus_coef
         self.envs = env_manager
         self.model = model
         self.optimizer = optimizer
@@ -36,10 +37,10 @@ class PPOAgent(object):
     def params(self):
         return {k: v for k, v in self.__dict__.items() if not hasattr(v, '__dict__')}
 
-    def episode_logstr(self, n, loss, policy_loss, value_loss):
-        eps_logstr = 'episode {}, reward avg {:.2f} | samples: {} --  loss: {:.4f} | policy loss: {:.4f} |value loss: {:.4f}'
+    def episode_logstr(self, n, loss, policy_loss, value_loss, entropy):
+        eps_logstr = 'episode {}, reward avg {:.2f} | samples: {} --  loss: {:.4f} | policy loss: {:.4f} |value loss: {:.4f} | entropy: {:.4f}'
         return eps_logstr.format(self.episode, self.episode_rewards[-1],
-                                 n, loss, policy_loss, value_loss)
+                                 n, loss, policy_loss, value_loss, entropy)
 
     def run_episode(self, render=False):
         self.envs.reset()
@@ -49,8 +50,8 @@ class PPOAgent(object):
             self.envs.step(actions, logprobs, values)
 
         self.episode_rewards.append(self.envs.mean_reward)
-        n, loss, policy_loss, value_loss = self.update()
-        print(self.episode_logstr(n, loss, policy_loss, value_loss))
+        n, loss, policy_loss, value_loss, entropy = self.update()
+        print(self.episode_logstr(n, loss, policy_loss, value_loss, entropy))
         self.episode += 1
 
     def estimate_advantage(self, returns, values):
@@ -79,16 +80,17 @@ class PPOAgent(object):
         policy_losses = []
         value_losses = []
         losses = []
+        entropies = []
 
         advantages = self.estimate_advantage(returns, pred_values)
 
         for i in range(self.epochs):
-            log_probs, values = self.model.evaluate_actions(states, actions)
+            log_probs, entropy, values = self.model.evaluate_actions(states, actions)
             policy_loss = self.policy_loss(log_probs, old_logprobs, advantages)
             value_loss = self.value_loss(returns, values)
 
             self.optimizer.zero_grad()
-            loss = (value_loss * self.value_loss_coef + policy_loss)
+            loss = (value_loss * self.value_loss_coef + policy_loss - entropy * self.entropy_bonus_coef)
             loss.backward()
             nn.utils.clip_grad_norm_(self.model.parameters(),
                                      self.grad_norm)
@@ -96,7 +98,8 @@ class PPOAgent(object):
             policy_losses.append(policy_loss.item())
             value_losses.append(value_loss.item())
             losses.append(loss.item())
-        return len(states), np.mean(losses), np.mean(policy_losses), np.mean(value_losses)
+            entropies.append(entropy.item())
+        return len(states), np.mean(losses), np.mean(policy_losses), np.mean(value_losses), np.mean(entropies)
 
     def save(self, path):
         out = {'attrs': self.params}
@@ -107,7 +110,7 @@ class PPOAgent(object):
         out['state_dicts'] = state_dicts
         torch.save(out, path)
 
-    def run_test_episode(self, env, render=True):
+    def run_test_episode(self, env, render=True, sample=False):
         reward = 0
         state = env.reset()
         done = False
@@ -115,7 +118,10 @@ class PPOAgent(object):
 
             with torch.no_grad():
                 state = torch.FloatTensor(state).view(1, -1)
-                action, _ = self.model(state)
+                if sample:
+                    action, _, _ = self.model.sample_action(state)
+                else:
+                    action, _ = self.model(state)
 
             state, r, done, _ = env.step(np.asarray(action)[0])
             reward += r
