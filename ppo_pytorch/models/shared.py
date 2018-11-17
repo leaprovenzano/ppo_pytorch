@@ -41,3 +41,12 @@ class PolicyValueModel(nn.Module):
         logprob, entropy = self.policy.evaluate_action(x, action)
         value = self.value_model(x)
         return logprob, entropy, value
+
+    def build_optimizer(self, optimizer, default_lr=1e-4, policy_std_lr=1e-7, *args, **kwargs):
+        if hasattr(self.policy, 'log_std'):
+            return optimizer([{'params': self.hidden.parameters()},
+                              {'params': self.value_model.parameters()},
+                              {'params': self.policy.log_std, 'lr': policy_std_lr},
+                              {'params': map(lambda p: p[1], filter(lambda p: p[0] != 'log_std', self.policy.named_parameters()))}], 
+                              default_lr, *args, **kwargs)
+        return optimizer(self.parameters(), lr=default_lr, *args, **kwargs)
