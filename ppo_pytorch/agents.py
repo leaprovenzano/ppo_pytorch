@@ -20,7 +20,7 @@ class PPOAgent(object):
             getattr(agent, k).load_state_dict(v)
         return agent
 
-    def __init__(self, env_manager, model, optimizer, epochs=20, grad_norm=0.5, normalize_advantage=True, clip_epsilon=.2, value_loss_coef=.1, entropy_bonus_coef=0.01):
+    def __init__(self, env_manager, model, optimizer, epochs=20, grad_norm=0.5, normalize_advantage=True, clip_epsilon=.5, value_loss_coef=.1, entropy_bonus_coef=0.1):
         self.value_loss_coef = value_loss_coef
         self.entropy_bonus_coef = entropy_bonus_coef
         self.envs = env_manager
