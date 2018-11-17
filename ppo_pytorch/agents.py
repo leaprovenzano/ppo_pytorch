@@ -110,7 +110,7 @@ class PPOAgent(object):
         out['state_dicts'] = state_dicts
         torch.save(out, path)
 
-    def run_test_episode(self, env, render=True):
+    def run_test_episode(self, env, render=True, sample=False):
         reward = 0
         state = env.reset()
         done = False
@@ -118,7 +118,10 @@ class PPOAgent(object):
 
             with torch.no_grad():
                 state = torch.FloatTensor(state).view(1, -1)
-                action, _ = self.model(state)
+                if sample:
+                    action, _, _ = self.model.sample_action(state)
+                else:
+                    action, _ = self.model(state)
 
             state, r, done, _ = env.step(np.asarray(action)[0])
             reward += r
