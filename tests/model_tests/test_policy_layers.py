@@ -10,7 +10,7 @@ from ppo_pytorch.models.policy_layers import CategoricalPolicy
 @pytest.mark.parametrize("sample_size", [1, 2])
 def test_categorical_policy(input_dim, output_dim, sample_size):
     inp_tensor = torch.randn((sample_size, input_dim))
-    policy = CategoricalPolicy(input_dim, output_dim)
+    policy = CategoricalPolicy(input_dim=input_dim, output_dim=output_dim)
     with torch.no_grad():
         forward_out = policy.forward(inp_tensor)
         assert forward_out.shape == (sample_size, output_dim)

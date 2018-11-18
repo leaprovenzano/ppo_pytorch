@@ -17,30 +17,6 @@ def plot_rewards(agent):
     return df.plot()
 
 
-class RewardProcessor(object):
-
-    def __init__(self, gamma=.99, positive_factor=2., clamp=(-1, 1)):
-        self.gamma=gamma
-        self.clamp = clamp
-        self.positive_factor = positive_factor
-
-
-
-    def shape(self, rewards):
-        if self.positive_factor:
-            rewards[rewards > 0] *=self.positive_factor
-        if self.clamp:
-            rewards = torch.clamp(rewards, *self.clamp)
-        return rewards
-
-
-    def compute_discount_returns(self, rewards):
-        returns = torch.zeros_like(rewards)
-        returns[-1] = rewards[-1]
-        for i in reversed(range(rewards.size(0)-1)):
-            returns[i] = returns[i+1]*self.gamma + rewards[i]
-        return returns
-        
 
 
 class TrainHistory(object):
