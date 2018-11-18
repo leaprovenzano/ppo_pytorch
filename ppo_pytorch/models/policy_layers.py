@@ -6,9 +6,10 @@ from torch.distributions import Normal, Categorical
 import numpy as np
 
 from ppo_pytorch.distributions import TruncatedNormal
+from ppo_pytorch.models.shared import NetworkHead
 
 
-class PolicyLayer(nn.Module):
+class PolicyLayer(NetworkHead):
 
     """base class for PolicyLayers which act as head for shared actor-critic or 
     standalone poicy models
@@ -22,17 +23,8 @@ class PolicyLayer(nn.Module):
         output_dim (int): size of output ie the size of the action space
     """
 
-    def __init__(self, input_dim, output_dim, activation=None):
-        super(PolicyLayer, self).__init__()
-        self.input_dim = input_dim
-        self.output_dim = output_dim
-        self.action_layer = nn.Linear(self.input_dim, self.output_dim)
-        self.activation = activation() if activation else lambda x: x
-
-    def forward(self, x):
-        x = self.action_layer(x)
-        x = self.activation(x)
-        return x
+    def __init__(self, *args, **kwargs):
+        super(PolicyLayer, self).__init__(*args, **kwargs)
 
     def dist(self, x):
         raise NotImplementedError('the dist method for {} has not been implemented!'.format(self))
@@ -51,9 +43,10 @@ class PolicyLayer(nn.Module):
 
 class GaussianPolicy(PolicyLayer):
 
-    def __init__(self, input_dim, output_dim, activation=nn.Tanh, init_std=1.):
-        super(GaussianPolicy, self).__init__(input_dim, output_dim, activation=activation)
+    def __init__(self, init_std=1., log_std_lr=1e-7, *args, **kwargs):
+        super(GaussianPolicy, self).__init__(*args, **kwargs)
         self.log_std = nn.Parameter(torch.ones(1) * np.log(init_std))
+        self.log_std_lr = log_std_lr
 
     @property
     def std(self):
@@ -63,11 +56,18 @@ class GaussianPolicy(PolicyLayer):
         x = self(x)
         return Normal(x, self.std.expand_as(x))
 
+    def get_optimizer_parameters(self):
+        log_std_p_dict = {'params': self.log_std, 'lr': self.log_std_lr}
+        p_dict = {'params': map(lambda p: p[1], filter(lambda p: p[0] != 'log_std', self.named_parameters()))}
+        if self.lr is not None:
+            p_dict['lr'] = self.lr
+        return [log_std_p_dict, p_dict]
+
 
 class FixedGaussianPolicy(PolicyLayer):
 
-    def __init__(self, input_dim, output_dim, activation=nn.Tanh, fixed_std=.5):
-        super(FixedGaussianPolicy, self).__init__(input_dim, output_dim, activation=activation)
+    def __init__(self, fixed_std=.5, *args, **kwargs):
+        super(FixedGaussianPolicy, self).__init__(*args, **kwargs)
         self.std = fixed_std
 
     def dist(self, x):
@@ -99,9 +99,9 @@ class TruncatedGaussianPolicy(GaussianPolicy):
 
 class CategoricalPolicy(PolicyLayer):
 
-    def __init__(self, input_dim, output_dims, activation=nn.Softmax):
-        super(CategoricalPolicy, self).__init__(input_dim, output_dims, activation=activation)
-        self.activation = activation(dim=-1)
+    def __init__(self, activation=nn.Softmax, *args, **kwargs):
+        super(CategoricalPolicy, self).__init__(*args, **kwargs)
+        self.output_activation = activation(dim=-1)
 
     def dist(self, x):
         x = self(x)

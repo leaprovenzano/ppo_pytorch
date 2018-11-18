@@ -1,16 +1,9 @@
 from torch import nn
+from ppo_pytorch.models.shared import NetworkHead
+
+class ValueLayer(NetworkHead):
+
+    def __init__(self, output_dim=1, *args, **kwargs):
+        super(ValueLayer, self).__init__(output_dim=output_dim, *args, **kwargs)
 
 
-class ValueLayer(nn.Module):
-
-    def __init__(self, input_dim, output_dim=1, activation=None):
-        super(ValueLayer, self).__init__()
-        self.input_dim = input_dim
-        self.output_dim = output_dim
-        self.output_layer = nn.Linear(self.input_dim, self.output_dim)
-        self.activation = activation() if activation else lambda x: x
-
-    def forward(self, x):
-        x = self.output_layer(x)
-        x = self.activation(x)
-        return x
