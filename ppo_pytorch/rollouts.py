@@ -90,13 +90,16 @@ class EnvWorker(object):
     def get_current_state(self):
         return self.current_state
 
+    def prepare_action(self, action):
+        return np.clip(np.asarray(action), self.env.action_space.low, self.env.action_space.high)
+
     def step(self, action, logprob, value):
         if not self.done:
             self.actions.append(action)
             self.logprobs.append(logprob)
             self.values.append(value)
             self.states.append(self.current_state)
-            next_state, r, self.done, _ = self.env.step(np.asarray(action))
+            next_state, r, self.done, _ = self.env.step(self.prepare_action(action))
             self.current_state = torch.FloatTensor(next_state)
             self.episode_reward += r
             self.rewards.append(torch.FloatTensor([r]))

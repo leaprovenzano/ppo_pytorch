@@ -122,8 +122,8 @@ class PPOAgent(object):
                     action, _, _ = self.model.sample_action(state)
                 else:
                     action, _ = self.model(state)
-
-            state, r, done, _ = env.step(np.asarray(action)[0])
+            action = np.clip(np.asarray(action[0]), env.action_space.low, env.action_space.high)
+            state, r, done, _ = env.step(action)
             reward += r
             env.render()
 
