@@ -99,9 +99,9 @@ class TruncatedGaussianPolicy(GaussianPolicy):
 
 class CategoricalPolicy(PolicyLayer):
 
-    def __init__(self, activation=nn.Softmax, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(CategoricalPolicy, self).__init__(*args, **kwargs)
-        self.output_activation = activation(dim=-1)
+        self.output_activation = nn.Softmax(dim=-1)
 
     def dist(self, x):
         x = self(x)
