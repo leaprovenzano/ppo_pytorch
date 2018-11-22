@@ -118,7 +118,7 @@ class PPOAgent(object):
         while not done:
 
             with torch.no_grad():
-                state = torch.FloatTensor(state).view(1, -1)
+                state = torch.FloatTensor(state).unsqueeze(0)
                 if sample:
                     action, _, _ = self.model.sample_action(state)
                 else:
