@@ -67,6 +67,7 @@ class EnvWorker(object):
         self.total_reward_log = []
 
         self.env = env
+        self.discrete = self.env.action_space.dtype in [int, np.int64, np.int32]
         self.reset()
 
     def __len__(self):
@@ -91,7 +92,16 @@ class EnvWorker(object):
         return self.current_state
 
     def prepare_action(self, action):
+        if self.discrete:
+            return np.asarray(action)
+
         return np.clip(np.asarray(action), self.env.action_space.low, self.env.action_space.high)
+
+
+    def env_step(self, action):
+        state, r, done, _ = self.env.step(self.prepare_action(action))
+        return state, r, done
+
 
     def step(self, action, logprob, value):
         if not self.done:
@@ -99,7 +109,7 @@ class EnvWorker(object):
             self.logprobs.append(logprob)
             self.values.append(value)
             self.states.append(self.current_state)
-            next_state, r, self.done, _ = self.env.step(self.prepare_action(action))
+            next_state, r, self.done = self.env_step(action)
             self.current_state = torch.FloatTensor(next_state)
             self.episode_reward += r
             self.rewards.append(torch.FloatTensor([r]))
@@ -132,16 +142,18 @@ class EnvManager(object):
         n (int): number of envworkers to maintain
         reward_processor (ppo_pytorch.utils.RewardProcessor): RewardProcessor object 
             passed to envworkers and used to process rewards on episode completion
+        worker (class, Default= EnvWorker) : Envworker class to use for initilizing envs. 
     """
 
-    def __init__(self, envs, reward_processor):
+    def __init__(self, envs, reward_processor, worker=EnvWorker):
         self.n = len(envs)
         self.reward_processor = reward_processor
+        self.worker = worker
         self.envs = self.build_workers(envs)
-
+        
 
     def build_workers(self, envs):
-        return [EnvWorker(env, self.reward_processor) for env in envs]
+        return [self.worker(env, self.reward_processor) for env in envs]
 
     def __len__(self):
         return self.n
@@ -215,8 +227,6 @@ class EnvManager(object):
             return states, actions, rewards, logprobs, values
 
 
-
-
 class GymManager(EnvManager):
 
     """Env manager for openai gym enviornments (stuff loadable by gym.make )
@@ -230,10 +240,10 @@ class GymManager(EnvManager):
             passed to envworkers and used to process rewards on episode completion
     """
 
-    def __init__(self, name, n, reward_processor, env_wrapper=None):
+    def __init__(self, name, n, reward_processor, env_wrapper=None, *args, **kwargs):
         self.name = name
         self.env_wrapper = env_wrapper
-        super(GymManager, self).__init__(envs=self.build_envs(n), reward_processor=reward_processor)
+        super(GymManager, self).__init__(envs=self.build_envs(n), reward_processor=reward_processor, *args, **kwargs)
 
     def build_env(self):
         env = gym.make(self.name)
