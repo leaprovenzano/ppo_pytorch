@@ -110,7 +110,8 @@ class PPOAgent(object):
         out['state_dicts'] = state_dicts
         torch.save(out, path)
 
-    def run_test_episode(self, env, render=True, sample=False):
+    def run_test_episode(self, env, render=True, sample=False, ):
+        discrete = env.action_space.dtype in [int, np.int64, np.int32]
         reward = 0
         state = env.reset()
         done = False
@@ -122,7 +123,13 @@ class PPOAgent(object):
                     action, _, _ = self.model.sample_action(state)
                 else:
                     action, _ = self.model(state)
-            action = np.clip(np.asarray(action[0]), env.action_space.low, env.action_space.high)
+
+            if discrete:
+                action = np.asarray(action)[0].argmax()
+            else:
+
+                action = np.clip(np.asarray(action)[0], env.action_space.low, env.action_space.high)
+
             state, r, done, _ = env.step(action)
             reward += r
             env.render()
