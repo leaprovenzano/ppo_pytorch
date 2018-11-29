@@ -58,7 +58,7 @@ class PPOAgent(object):
         advantages = Variable(returns).view(-1, 1) - Variable(values.data)
         if self.normalize_advantage:
             advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-5)
-        return advantages
+        return advantages.squeeze()
 
     def policy_loss(self, log_probs, old_log_probs, advantages):
         ratio = torch.exp(log_probs - Variable(old_log_probs.data))
@@ -99,7 +99,7 @@ class PPOAgent(object):
             value_losses.append(value_loss.item())
             losses.append(loss.item())
             entropies.append(entropy.item())
-        return len(states), losses[-1], policy_losses[-1], value_losses[-1], entropies[-1]
+        return len(states), losses[-1], np.sum(policy_losses), value_losses[-1], entropies[-1]
 
     def save(self, path):
         out = {'attrs': self.params}
