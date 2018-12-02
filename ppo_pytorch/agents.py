@@ -31,6 +31,7 @@ class PPOAgent(object):
         self.normalize_advantage = normalize_advantage
         self.clip_epsilon = clip_epsilon
         self.episode_rewards = []
+        self.entropy_log = []
         self.episode = 0
 
     @property
@@ -42,8 +43,9 @@ class PPOAgent(object):
         return eps_logstr.format(self.episode, self.episode_rewards[-1],
                                  n, loss, policy_loss, value_loss, entropy)
 
-    def run_episode(self, render=False):
-        self.envs.reset()
+    def run_episode(self, render=False, reset=True):
+        if reset:
+            self.envs.reset()
         while not self.envs.ready:
             with torch.no_grad():
                 actions, logprobs, values = self.model.sample_action(self.envs.current_states)
@@ -99,7 +101,9 @@ class PPOAgent(object):
             value_losses.append(value_loss.item())
             losses.append(loss.item())
             entropies.append(entropy.item())
-        return len(states), losses[-1], np.sum(policy_losses), value_losses[-1], entropies[-1]
+        entropy_mean = np.mean(entropies)
+        self.entropy_log.append(entropy_mean)
+        return len(states), losses[-1], np.sum(policy_losses), value_losses[-1], entropy_mean
 
     def save(self, path):
         out = {'attrs': self.params}
@@ -121,14 +125,15 @@ class PPOAgent(object):
                 state = torch.FloatTensor(state).unsqueeze(0)
                 if sample:
                     action, _, _ = self.model.sample_action(state)
+
                 else:
                     action, _ = self.model(state)
 
-            if discrete:
-                action = np.asarray(action)[0].argmax()
-            else:
+                    if discrete:
+                        action = np.asarray(action)[0].argmax()
+                    else:
 
-                action = np.clip(np.asarray(action)[0], env.action_space.low, env.action_space.high)
+                        action = np.clip(np.asarray(action)[0], env.action_space.low, env.action_space.high)
 
             state, r, done, _ = env.step(action)
             reward += r
