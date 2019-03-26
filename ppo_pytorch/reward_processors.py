@@ -44,3 +44,22 @@ class ScaledPositiveRewardProcessor(ShapedRewardProcessor):
     def shape(self, rewards):
         rewards[rewards > 0] *= self.positive_scale
         return super(ScaledPositiveRewardProcessor, self)._shape(rewards)
+
+
+class RandomGammaRewardProcessor(RewardProcessor):
+
+    def __init__(self, gamma_min=.95, gamma_max=.995):
+        self.gamma_min = gamma_min
+        self.gamma_max = gamma_max
+
+    @property
+    def gamma(self):
+        return np.random.uniform(self.gamma_min, self.gamma_max)
+
+    def compute_discount_returns(self, rewards):
+        returns = torch.zeros_like(rewards)
+        returns[-1] = rewards[-1]
+        gamma = self.gamma
+        for i in reversed(range(rewards.size(0) - 1)):
+            returns[i] = returns[i + 1] * gamma + rewards[i]
+        return returns
