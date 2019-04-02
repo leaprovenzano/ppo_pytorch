@@ -3,7 +3,7 @@ from torch import nn
 from torch.distributions import Categorical
 
 from .generic import PolicyHead
-from ppo_pytorch.utils import expand_dims
+from ppo_pytorch.utils import reshape_outputs
 
 
 class DiscretePolicy(PolicyHead):
@@ -21,6 +21,6 @@ class CategoricalPolicy(DiscretePolicy):
     def _get_distribution(self, x):
         return self.Distribution(logits=x)
 
-    @expand_dims(1, -1)
+    @reshape_outputs(1, -1)
     def sample(self, x):
         return super().sample(x)
