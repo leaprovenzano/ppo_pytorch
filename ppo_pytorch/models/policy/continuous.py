@@ -5,7 +5,7 @@ from torch import nn
 from torch.distributions import Normal, Beta
 
 from .generic import PolicyHead
-from ppo_pytorch.utils import MnMxScaler
+from ppo_pytorch.utils import MinMaxScaler
 
 
 class ContinuousPolicy(PolicyHead):
@@ -68,19 +68,20 @@ class ScaledBetaPolicy(BetaPolicy):
 
     def __init__(self, output_dim, hidden, action_scale=(-1, 1), *args, **kwargs):
         super(ScaledBetaPolicy, self).__init__(output_dim, hidden, *args, **kwargs)
-        self.action_scaler = MnMxScaler(action_scale, self.bounds)
+        self.action_scaler = MinMaxScaler(action_scale, self.bounds)
 
     @property
     def info(self):
-        return dict(**super().info, output_action_range = self.action_scaler.range)
+        return dict(**super().info, output_action_range=self.action_scaler.range)
 
     def sample(self, state: torch.Tensor):
         action, logprob = super().sample(state)
         return self.action_scaler.scale(action), logprob
 
-    def clipped_advantage_error(self, x: torch.Tensor, action: torch.Tensor, advantage: torch.Tensor, old_logprob: torch.Tensor, *args, **kwargs) -> torch.Tensor:
+    def loss(self, x: torch.Tensor, action: torch.Tensor, advantage: torch.Tensor, old_logprob: torch.Tensor, clip=.2) -> torch.Tensor:
         action_ = self.action_scaler.inverse_scale(action)
-        return super().clipped_advantage_error(x, action_, advantage, old_logprob)
+        dist = self.distribution(x)
+        return self.clipped_advantage_error(dist, action_, advantage, old_logprob, clip=clip)
 
 
 # class BaseGaussianPolicy(ContinuousPolicy):

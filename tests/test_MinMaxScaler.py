@@ -83,29 +83,29 @@ def test_tensors(strat):
 
 @composite
 def max_greater_than_min(draw):
-    floatvals=floats(min_value=-100, max_value=100)
-    a_min=draw(floatvals)
-    a_max=draw(floats(min_value=a_min - 100, max_value=a_min))
+    floatvals = floats(min_value=-100, max_value=100)
+    a_min = draw(floatvals)
+    a_max = draw(floats(min_value=a_min - 100, max_value=a_min))
 
-    b_min=draw(floatvals)
-    b_max=draw(floats(min_value=b_min - 100, max_value=b_min))
+    b_min = draw(floatvals)
+    b_max = draw(floats(min_value=b_min - 100, max_value=b_min))
 
-    scaleto=(a_min, a_max)
-    scalefrom=(b_min, b_max)
+    scaleto = (a_min, a_max)
+    scalefrom = (b_min, b_max)
 
-    inp=draw(float_tensors(shape=array_shapes(min_dims=1, max_dims=3, min_side=2, max_side=10),
+    inp = draw(float_tensors(shape=array_shapes(min_dims=1, max_dims=3, min_side=2, max_side=10),
                              unique=True, elements=floats(min_value=b_min, max_value=b_max)))
     return scaleto, scalefrom
 
 
 @given(tuples(floats(), floats()), tuples(floats(), floats()))
 def test_MnMxScaler_init(scaleto, scalefrom):
-    amin, amax=scaleto
-    bmin, bmax=scalefrom
+    amin, amax = scaleto
+    bmin, bmax = scalefrom
     if (amax <= amin) or (bmax <= bmin) or not all(map(np.isfinite, (amin, amax, bmin, bmax))):
         with pytest.raises(ValueError):
-            scaler=MinMaxScaler(scaleto, scalefrom)
+            scaler = MinMaxScaler(scaleto, scalefrom)
     else:
-        scaler=MinMaxScaler(scaleto, scalefrom)
+        scaler = MinMaxScaler(scaleto, scalefrom)
         assert scaler.scale_range == scaleto
         assert scaler.input_range == scalefrom

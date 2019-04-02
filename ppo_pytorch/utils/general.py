@@ -6,7 +6,11 @@ import functools
 from typing import Dict, Tuple, Sequence, Union
 
 
-class MnMxRange(object):
+def is_finite(x):
+    return np.all(np.isfinite(x))
+
+
+class MinMaxRange(object):
 
     def __get__(self, instance, owner):
         return instance.__dict__[self.name]
@@ -14,8 +18,8 @@ class MnMxRange(object):
     def validate(self, vals):
         try:
             assert len(vals) == 2
-            assert all(map(np.isfinite, vals))
-            assert vals[0] < vals[1]
+            assert is_finite(vals)
+            assert np.all(vals[0] < vals[1])
         except AssertionError:
             raise ValueError(f'Values are expected to be finite min value must be larger than max! recieved: {vals[0]}, {vals[1]}')
 
@@ -27,10 +31,10 @@ class MnMxRange(object):
         self.name = name
 
 
-class MnMxScaler(object):
+class MinMaxScaler(object):
 
-    scale_range = MnMxRange()
-    input_range = MnMxRange()
+    scale_range = MinMaxRange()
+    input_range = MinMaxRange()
 
     def __init__(self, scale_range: Tuple[float, float], input_range=(0, 1)):
         self.scale_range = scale_range
@@ -51,6 +55,10 @@ class MnMxScaler(object):
     @torch.no_grad()
     def inverse_scale(self, x: Union[np.array, torch.tensor]):
         return self._scale(x, self.scale_range, self.input_range)
+
+    @torch.no_grad()
+    def __call__(self, x: Union[np.array, torch.tensor]):
+        return self.scale(x)
 
 
 def expand_dims(*shape):
