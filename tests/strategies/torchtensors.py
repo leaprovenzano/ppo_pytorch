@@ -34,7 +34,7 @@ def tensors(dtypes, *args, **kwargs):
 
 
 def float_tensors(dtypes=float_dtypes, *args, **kwargs):
-    return tensors(dtypes=float_dtypes, *args, **kwargs)
+    return tensors(dtypes=dtypes, *args, **kwargs)
 
 
 def int_tensors(dtypes=int_dtypes, *args, **kwargs):
