@@ -11,7 +11,7 @@ DESCRIPTION = 'proximal policy optimization in pytorch.'
 URL = 'https://github.com/leaprovenzano/ppo-pytorch'
 EMAIL = 'leaprovenzano@gmail.com'
 AUTHOR = 'Lea Provenzano'
-REQUIRES_PYTHON = '>=3.6.0'
+REQUIRES_PYTHON = '>=3.7.0'
 VERSION = '0.1.1'
 
 REQUIRED = ['torch', 'numpy', 'gym']
