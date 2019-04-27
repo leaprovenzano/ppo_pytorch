@@ -10,10 +10,11 @@ Welcome to ppo_pytorch's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-.. automodule:: ppo_pytorch
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   intro
+   api_docs
+
+
+
 
 
 Indices and tables

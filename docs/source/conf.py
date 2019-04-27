@@ -12,7 +12,12 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('..'))
+
+from recommonmark.parser import CommonMarkParser
+
+sys.path.insert(0, os.path.abspath('../..'))
+
+
 import ppo_pytorch
 
 
@@ -31,10 +36,12 @@ release = ppo_pytorch.__version__
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.autodoc', 
-              'sphinx.ext.viewcode', 
-              'sphinx.ext.napoleon']
-              
+extensions = ['sphinx.ext.autodoc',
+              'sphinx.ext.viewcode',
+              'sphinx.ext.napoleon',
+               'sphinx.ext.autosummary',
+               'recommonmark']
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
@@ -55,3 +62,11 @@ html_theme = 'sphinx_rtd_theme'
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+
+
+source_suffix = ['.rst', '.md']
+
+
+from sphinx.builders.html import StandaloneHTMLBuilder 
+StandaloneHTMLBuilder.supported_image_types = [ 'image/svg+xml', 'image/gif', 'image/png', 'image/jpeg' ]
