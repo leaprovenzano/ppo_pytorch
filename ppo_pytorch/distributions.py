@@ -1,3 +1,5 @@
+"""Summary
+"""
 from functools import partial
 from torch.distributions import Beta
 from ppo_pytorch.utils.scalers import MinMaxScaler
@@ -7,26 +9,32 @@ class UnimodalBeta(Beta):
 
     """Adjusted Beta(α + 1, β + 1) which when used along with softplus activation ensures our Beta distribution is always unimodal.
 
-        Examples:
-        
-            >>> import torch
-            >>> from ppo_pytorch.distributions import UnimodalBeta
-            >>>
-            >>> a = torch.tensor([[2.93, 0.65, 0.84],
-            ...                   [0.52, 3.39, 5.86]])
-            >>> b = torch.tensor([[1.40, 0.06, 0.55],
-            ...                   [6.45, 3.83, 1.16]])
-            >>> dist = UnimodalBeta(a, b)
-            >>> dist.concentration1
-            tensor([[3.9300, 1.6500, 1.8400],
-                    [1.5200, 4.3900, 6.8600]])
-            >>> dist.concentration0
-            tensor([[2.4000, 1.0600, 1.5500],
-                    [7.4500, 4.8300, 2.1600]])
-            >>> dist.sample()
-            tensor([[0.4651, 0.3861, 0.5077],
-                    [0.2856, 0.5835, 0.7325]])
 
+    Examples:
+
+
+        >>> import torch
+        >>> from ppo_pytorch.distributions import UnimodalBeta
+        >>>
+        >>> a = torch.tensor([[2.93, 0.65, 0.84],
+        ...                   [0.52, 3.39, 5.86]])
+        >>> b = torch.tensor([[1.40, 0.06, 0.55],
+        ...                   [6.45, 3.83, 1.16]])
+        >>> dist = UnimodalBeta(a, b)
+
+        >>> dist.concentration1
+        tensor([[3.9300, 1.6500, 1.8400],
+                [1.5200, 4.3900, 6.8600]])
+
+        >>> dist.concentration0
+        tensor([[2.4000, 1.0600, 1.5500],
+                [7.4500, 4.8300, 2.1600]])
+
+        
+        >>> dist.sample()
+        tensor([[0.4651, 0.3861, 0.5077],
+                [0.2856, 0.5835, 0.7325]])
+    
     """
 
     def __init__(self, alpha, beta, validate_args=None):
@@ -41,25 +49,35 @@ class ScaledUnimodalBeta(UnimodalBeta):
        - inputs to log_prob are rescaled from the specified output range back to [0,1]
 
 
-        Examples:
+    Examples:
+        
+        Usually you will want to create a ScaledUniModalBeta factory from with your output range.
 
-            >>> import torch
-            >>> from ppo_pytorch.distributions import ScaledUnimodalBeta
-            >>> 
-            >>> # make a new ScaledUniModalBeta factory from with your output range
-            >>> ScaledDist = ScaledUnimodalBeta.from_range((-1, 1))
-            >>> 
-            >>> # that was one time setup, now you can use scaled dist as normal with alpha & beta params 
-            >>> # and it will always scale your samples and make sure logprobs are correct. 
-            >>> a = torch.tensor([[2.93], [0.65]])
-            >>> b = torch.tensor([[1.40], [0.06]])
-            >>> dist = ScaledDist(a, b)
-            >>> dist.sample()
-            tensor([[ 0.2011],
-                    [-0.6362]])
-            >>> dist.log_prob(torch.tensor([[ 0.2011], [-0.6362]]))
-            tensor([[ 0.6600],
-                    [-0.5400]])
+        >>> import torch
+        >>> from ppo_pytorch.distributions import ScaledUnimodalBeta
+        >>> 
+        >>> ScaledDist = ScaledUnimodalBeta.from_range((-1, 1))
+        
+        ...that was one time setup, now you can use scaled dist as normal with alpha & beta params.
+        Now we can instantiate single instances of our ScaledDist with inputs `alpha` and `beta` as normal:
+
+        >>> a = torch.tensor([[2.93], [0.65]])
+        >>> b = torch.tensor([[1.40], [0.06]])
+        >>
+        >>> dist = ScaledDist(a, b)
+
+        our outputs will be properly rescaled from the [0, 1] range of the beta distribution to our the range we specified on 
+        creation of our `ScaledDist` factory:
+
+        >>> dist.sample()
+        tensor([[ 0.2011],
+                [-0.6362]])
+
+        the log_prob method will also properly inverse_scale samples before calculating probabilities. 
+
+        >>> dist.log_prob(torch.tensor([[ 0.2011], [-0.6362]]))
+        tensor([[ 0.6600],
+                [-0.5400]])
     """
 
     @classmethod
