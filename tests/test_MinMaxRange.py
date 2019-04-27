@@ -6,7 +6,7 @@ from hypothesis import given
 from hypothesis.strategies import integers, floats, composite
 from hypothesis.extra.numpy import arrays, array_shapes
 
-from ppo_pytorch.utils.descriptors import MinMaxRange
+from ppo_pytorch.utils.scalers import MinMaxRange
 
 basic_arrays = arrays(dtype='float',
                       shape=array_shapes(min_dims=1, max_dims=3, min_side=2, max_side=10),

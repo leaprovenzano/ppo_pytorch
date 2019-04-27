@@ -37,10 +37,10 @@ class TestScaledUnimodalBeta(TestUnimodalBeta):
         dist_partial = ScaledUnimodalBeta.from_range((-1, 1))
         dist = dist_partial(torch.rand(10), torch.rand(10))
         assert isinstance(dist, ScaledUnimodalBeta)
-        assert dist.sample_scaler.inrange.min == 0 
-        assert dist.sample_scaler.inrange.max == 1
-        assert dist.sample_scaler.outrange.min == -1
-        assert dist.sample_scaler.outrange.max == 1
+        assert dist._sample_scaler.inrange.min == 0 
+        assert dist._sample_scaler.inrange.max == 1
+        assert dist._sample_scaler.outrange.min == -1
+        assert dist._sample_scaler.outrange.max == 1
 
     @given(alpha_beta())
     def test_scaled_behavior(self, params):
